@@ -89,11 +89,12 @@ int main()
 {
 	char choice = '0';
 	cout << "字符对应表在下方给出" << endl;
-	cout << "单个正态总体均值：a" << endl;
-	cout << "单个正态总体方差(默认均值未知)：b" << endl;
-	cout << "两个正态总体期望之差(默认差为0,方差相等但未知)：c" << endl;
-	cout << "两个正态总体方差之比(默认双方均值未知，比值为1)：d" << endl;
-	cout << "单因素方差分析：e" << endl;
+	cout << "单个正态总体均值：A" << endl;
+	cout << "单个正态总体方差(默认均值未知)：B" << endl;
+	cout << "两个正态总体期望之差(默认差为0,方差相等但未知)：C" << endl;
+	cout << "两个正态总体方差之比(默认双方均值未知，比值为1)：D" << endl;
+	cout << "单因素方差分析：E" << endl;
+	cout << "无交互作用的双因素方差分析：F" << endl;
 	cout << "退出：q" << endl;
 	cout << "请按照自己的需求输入相应的选项字符，输入以第一个字符为准。选项字符不区分大小写：";
 	cin >> choice;
@@ -122,6 +123,9 @@ void menu(char choice)
 		break;
 	case 'e':
 	case 'E':one_way_ANOVA();
+		break;
+	case 'f':
+	case 'F':two_way_ANOVA_1();
 		break;
 	case 'q':
 	case 'Q':return;
@@ -384,7 +388,91 @@ void one_way_ANOVA()
 	cout << setw(6) << "Se" << setw(12) << Se << setw(12) << n - a << setw(12) << Se1 << setw(12) << SA1 / Se1 << endl;
 	cout << setw(6) << "ST" << setw(12) << ST << setw(12) << n - 1 << endl;//实现表格式输出。
 	delete[]p;
-	menu('0');
+	menu('1');
 	return;
 
+}
+
+
+void two_way_ANOVA_1()
+{
+	int a, b; 
+	cout << "请输入行因素A与列因素B的个数，中间用空格链接，返回上一级请输入0：" << endl;
+	cin >> a >> b;
+	if (a==0 or b == 0)
+	{
+		menu('0');
+		return;
+	}
+	int i, j;
+	double** p = new double* [a];//动态定义二维数组
+	for (i = 0; i < a; i++)
+	{
+		p[i] = new double[b];
+	}
+	printf("请输入%d个元素，元素间以空格分隔:\n", a * b);
+	for (i = 0; i < a; i++)
+	{
+		for (j = 0; j < b; j++)
+		{
+			cin >> p[i][j];
+		}
+	}
+	int n = a * b;
+	double ST = 0;
+	double Se = 0;
+	double SA = 0;
+	double SB = 0;
+	double av_n = 0;
+	for (i = 0; i < a; i++)
+	{
+		for (j = 0; j < b; j++)
+		{
+			av_n = av_n + p[i][j];
+		}
+	}
+	av_n = av_n / n;
+	for (i = 0; i < a; i++)
+	{
+		for (j = 0; j < b; j++)
+		{
+			ST = pow(p[i][j] - av_n, 2) + ST;
+		}
+	}
+
+	for (i = 0; i < a; i++)
+	{
+		double av_i = 0;
+		for (j = 0; j < b; j++)
+		{
+			av_i = p[i][j] + av_i;
+		}
+		av_i = av_i / b;
+		SA = pow(av_i - av_n, 2) + SA;
+	}
+	SA = SA * b;
+	for (i = 0; i < b; i++)
+	{
+		double av_j = 0;
+		for (j = 0; j < a; j++)
+		{
+			av_j = p[j][i] + av_j;
+		}
+		av_j = av_j / a;
+		SB = pow(av_j - av_n, 2) + SB;
+	}
+	SB = SB * a;
+	Se = ST - SA - SB;
+	double SA1 = SA / (double(a) - double(1));
+	double SB1 = SB / (double(b) - double(1));
+	double ne = (double(a) - double(1)) * (double(b) - double(1));
+	double Se1 = Se / ne;
+	cout << setw(6) << "来源" << setw(12) << "平方和" << setw(12) << "自由度" << setw(12) << "均方和" << setw(12) << "F比   " << endl;
+	cout << setw(6) << "SA" << setw(12) << SA << setw(12) << a - 1 << setw(12) << SA1 << setw(12) << SA1/Se1 << endl;
+	cout << setw(6) << "SB" << setw(12) << SB << setw(12) << b - 1 << setw(12) << SB1 << setw(12) << SB1/Se1 << endl;
+	cout << setw(6) << "Se" << setw(12) << Se << setw(12) << ne << setw(12) << Se1 << endl;
+	cout << setw(6) << "ST" << setw(12) << ST << setw(12) << n - 1 << endl;
+	delete[]p; 
+	menu('1');
+	return ;
 }
