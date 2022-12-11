@@ -6,6 +6,7 @@
 #include<iostream>
 #include<cmath>
 #include<vector>//不用vector也能实现，这里使用只不过是展示更多的东西。
+#include<iomanip>
 
 using namespace std;
 
@@ -15,17 +16,19 @@ void single_population_va();//单正态总体方差
 void double_population_av();//双正态总体均值差是否为零（两均值是否相等）
 void double_population_va();//双正态总体均值之比(方差未知的情况)
 void one_way_ANOVA();//单因素方差分析
-
+void two_way_ANOVA_1();//无交互作用的双因素方差分析
+void two_way_ANOVA_2();//有交互作用的双因素方差分析
 
 
 class cmpt
 {
 	public:
 		void av_cmpt(int);
-		void va_cmpt(vector<double>,double);
 		double av = 0;
 		double va = 0;
 		double va_ori = 0;//设为私有的话不方便访问。虽然可以用友元或者地址访问，但在这里好像没有必要。
+    private:
+		void va_cmpt(vector<double>,double);
 };
 
 
@@ -46,14 +49,40 @@ void cmpt::av_cmpt(int a)
 
 void cmpt::va_cmpt(vector<double> a,double b)
 {
-	for (int i = 0; i < a.size(); i++)
+	for (int i = 0; unsigned(i) < a.size(); i++)
 		va_ori = pow((a[i] - av), 2) + va_ori;
 	va = va_ori / (a.size() - 1);
 }
 
 
-//这里用类实现完全是为了展示更多的东西。vector也是.
+//这里用类实现是为了展示更多的东西,节省代码量。
 
+
+class cmpt_1 :public cmpt
+{
+public:
+	int n = 0;
+	double sum = 0;
+	double sum2 = 0;
+	void av_cmpt(int);
+};
+
+
+void cmpt_1::av_cmpt(int a)
+{
+	n = a;
+	vector<double> a1(a, 0);
+	for (int i = 0; i < a; i++)
+	{
+		cin >> a1[i];
+		av = a1[i] + av;
+		sum2 = pow(a1[i], 2) + sum2;
+	}
+	sum = av;
+	av = av / a;
+}
+
+//方差分析用到的数据量更多，算法也有微妙的不同，所以用了继承。
 
 
 int main()
@@ -64,6 +93,7 @@ int main()
 	cout << "单个正态总体方差(默认均值未知)：b" << endl;
 	cout << "两个正态总体期望之差(默认差为0,方差相等但未知)：c" << endl;
 	cout << "两个正态总体方差之比(默认双方均值未知，比值为1)：d" << endl;
+	cout << "单因素方差分析：e" << endl;
 	cout << "退出：q" << endl;
 	cout << "请按照自己的需求输入相应的选项字符，输入以第一个字符为准。选项字符不区分大小写：";
 	cin >> choice;
@@ -89,6 +119,9 @@ void menu(char choice)
 		break;
 	case 'd':
 	case 'D':double_population_va();
+		break;
+	case 'e':
+	case 'E':one_way_ANOVA();
 		break;
 	case 'q':
 	case 'Q':return;
@@ -234,6 +267,7 @@ void single_population_va()
 		cout << "请输入正确的方差格式：";
 		cin >> variance;
 	}
+	//对上述输入做出数据检测。
 	for (int i = 0; i < n; i++)
 	{
 		variance_1 = variance_1 + pow((p[i] - av_1), 2);
@@ -301,6 +335,56 @@ void double_population_va()
 	cout << "第二组数据方差为：" << n2.va << endl;
 	cout << "F = " << F << " ~ F(" << a - 1 << ',' << b - 1 << ')' << endl;
 	menu('1');
+	return;
+
+}
+
+
+
+void one_way_ANOVA()
+{
+	cout << "请输入测试组数,如要返回请输入0：";
+	int a = 0;
+	cin >> a;
+	if (a == 0)
+	{
+		menu('0');
+		return;
+	}
+	cmpt_1* p = new cmpt_1[a];
+	int n = 0;
+	for (int i = 0; i < a; i++)
+	{
+		cout << "请输入第 " << i + 1 << " 组数据数据个数" << endl;
+		int j = 0;
+		cin >> j;
+		n = n + j;
+		cout << "请输入第 " << i + 1 << " 组数据数据，数据间用空格链接：" << endl;
+		p[i].av_cmpt(j);
+	}
+	double av = 0;
+	double sum2 = 0;
+    double ST = 0;
+	double SA = 0;
+	double Se = 0;
+	for (int i = 0; i < a; i++)
+	{
+		av = av + p[i].sum;
+		sum2 = sum2 + p[i].sum2;
+		SA = pow(p[i].av, 2) * p[i].n + SA ;
+	}
+	av = av / n;
+    ST = sum2 - n * pow(av, 2);
+	SA = SA - n * pow(av, 2);
+	Se = ST - SA;
+	double SA1 = SA / (double(a) - double(1));
+	double Se1 = Se / (double(n) - double(a));
+	cout << setw(6) << "来源" << setw(12) << "平方和" << setw(12) << "自由度" << setw(12) << "均方和" << setw(12) << "F比   " << endl;
+	cout << setw(6) << "SA" << setw(12) << SA << setw(12) << a - 1 << setw(12) << SA1 << setw(12) << "F =   " << endl;
+	cout << setw(6) << "Se" << setw(12) << Se << setw(12) << n - a << setw(12) << Se1 << setw(12) << SA1 / Se1 << endl;
+	cout << setw(6) << "ST" << setw(12) << ST << setw(12) << n - 1 << endl;//实现表格式输出。
+	delete[]p;
+	menu('0');
 	return;
 
 }
