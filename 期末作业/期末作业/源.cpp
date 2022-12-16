@@ -166,7 +166,6 @@ int main()
 		return 0;
 	}
 	menu(choice);
-	
 	return 0;
 }
 
@@ -203,7 +202,15 @@ void menu(char choice)
 		break;
 	case 'q':
 	case 'Q':return;
-	default:cout << "无匹配选项，程序退出。";
+	default:cout << "无匹配选项，请重新输入。";
+		cin >> choice;
+		cin.ignore(200, '\n');
+		while (cin.eof() == true)
+		{
+			cout << endl << "输入错误，程序退出。";
+			return;
+		}
+		menu(choice);
 		return;
 
 	}
@@ -224,7 +231,7 @@ void menu(int a)
 			cout << endl << "输入错误，程序退出。";
 			return;
 		}
-		menu(choice);   //这里之前做测试，如果输入ctrl+z（空字符）会报错，所以增加空字符检测。
+		menu(choice);   //这里之前做测试，如果输入ctrl+z（空字符）会导致程序无法正常运行，所以增加空字符检测。
 		return;
 	case 1:cout << "如要继续，请按字符对应表输入，退出请输入Q：";
 		cin >> choice;
